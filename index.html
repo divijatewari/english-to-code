@@ -1,264 +1,234 @@
-<!--
-English-to-Code — Single-file React App
-Single HTML file using React (via CDN) and Babel for JSX. Deployable as a static site (Netlify/GitHub Pages).
-
-How to use: open index.html in a browser OR deploy to Netlify/GitHub Pages.
-
-Features:
-- Natural language input
-- Simple rule-based NLP + keyword mapping -> code snippets (Python/JS/C++)
-- Examples library
-- Copy to clipboard
-- Download as .txt
-- Clean responsive UI
-
-Notes: This is a rule-based prototype for demo. For real AI behavior, integrate a backend with OpenAI or other LLMs.
--->
-
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>English → Code — Prototype</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <style>
-      /* Minimal clean CSS (feel free to customize) */
-      :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa}
-      *{box-sizing:border-box}
-      html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#071029 0%, #071836 100%);color:#e6eef6}
-      .container{max-width:980px;margin:36px auto;padding:20px}
-      header{display:flex;align-items:center;gap:16px}
-      header h1{margin:0;font-size:20px}
-      .card{background:rgba(255,255,255,0.03);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-      textarea{width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-      select,input,button{padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:inherit}
-      .row{display:flex;gap:12px;align-items:center}
-      .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
-      .examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-      .chip{padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:999px;cursor:pointer}
-      pre{background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(255,255,255,0.02));padding:12px;border-radius:8px;overflow:auto}
-      footer{margin-top:18px;color:var(--muted);font-size:13px}
-      .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
-      .left{display:flex;align-items:center;gap:12px}
-      .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#60a5fa,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700}
-      .btn{background:linear-gradient(90deg,#60a5fa,#7c3aed);border:none;color:#051128;padding:10px 12px;border-radius:8px;cursor:pointer}
-      .muted{color:var(--muted)}
-      .flex{display:flex;gap:12px}
-      @media (max-width:720px){.row{flex-direction:column}.flex{flex-direction:column}}
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="topbar">
-        <div class="left">
-          <div class="logo">E→C</div>
-          <div>
-            <h1>English → Code (Prototype)</h1>
-            <div class="muted">Type a problem in plain English and get a code snippet / pseudocode.</div>
-          </div>
-        </div>
-        <div>
-          <button class="btn" id="downloadBtn">Download .txt</button>
-        </div>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>English → Code (Demo)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--muted:#95a1b8;--accent:#6ee7b7}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#071028 0%,#0f1724 100%);color:#e6eef6}
+  .container{max-width:920px;margin:36px auto;padding:28px;background:linear-gradient(180deg,#071028cc,#071028aa);border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,.6)}
+  h1{margin:0 0 8px;font-size:28px}
+  p.lead{margin:0 0 18px;color:var(--muted)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  textarea,input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #132033;background:#061021;color:#e6eef6;box-sizing:border-box}
+  .controls{display:grid;grid-template-columns:1fr 180px;gap:12px;margin-top:12px}
+  button{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid #203248;color:var(--accent)}
+  pre{background:#041322;color:#bfeadf;padding:14px;border-radius:10px;overflow:auto;white-space:pre-wrap}
+  .meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:var(--muted);font-size:13px}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .chip{background:#071b2a;padding:8px 10px;border-radius:999px;border:1px solid #083048;cursor:pointer;color:var(--muted)}
+  .result-title{margin:18px 0 6px;font-weight:600}
+  .footer{margin-top:20px;color:var(--muted);font-size:14px}
+  .copybtn{float:right;background:transparent;border:0;color:var(--muted);cursor:pointer}
+  @media(max-width:640px){.controls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1>English → Code — Demo</h1>
+    <p class="lead">Type a coding request in plain English and get a runnable code snippet. This is a demo using a local generator — production LLM integration available.</p>
+
+    <label for="input">Describe what you want (e.g. "Find maximum in a list")</label>
+    <textarea id="input" rows="4" placeholder="e.g. Merge two sorted arrays"></textarea>
+
+    <div class="controls">
+      <select id="language">
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+      </select>
+
+      <div style="display:flex;gap:8px">
+        <button id="runBtn">Generate</button>
+        <button id="liveBtn" class="ghost">Try PRO (Gemini)</button>
       </div>
-
-      <div class="card">
-        <label><strong>Type your problem statement</strong></label>
-        <textarea id="inputText" placeholder="e.g. Find the largest number in a list, or reverse a string"></textarea>
-
-        <div class="controls">
-          <div class="row">
-            <label class="muted">Language:</label>
-            <select id="langSelect">
-              <option value="python">Python</option>
-              <option value="javascript">JavaScript</option>
-              <option value="cpp">C++</option>
-              <option value="pseudocode">Pseudocode</option>
-            </select>
-          </div>
-
-          <div class="row">
-            <label class="muted">Mode:</label>
-            <select id="modeSelect">
-              <option value="snippet">Code Snippet</option>
-              <option value="explain">Explanation + Steps</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
-
-          <div style="margin-left:auto" class="row">
-            <button id="translateBtn" class="btn">Translate →</button>
-          </div>
-        </div>
-
-        <div style="margin-top:14px">
-          <div class="muted">Examples:</div>
-          <div class="examples" id="examples"></div>
-        </div>
-
-        <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
-
-        <div>
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <div>
-              <strong>Output</strong>
-              <div class="muted">Copy, tweak, or download the snippet.</div>
-            </div>
-            <div class="row">
-              <button id="copyBtn">Copy</button>
-              <button id="clearBtn">Clear</button>
-            </div>
-          </div>
-
-          <div style="margin-top:10px">
-            <pre id="outputArea">Your translated code will appear here...</pre>
-          </div>
-        </div>
-
-      </div>
-
-      <footer>
-        Prototyped by Divija — Rule-based mapping. For stronger LLM behavior, add a backend with OpenAI (never expose keys in frontend).
-      </footer>
     </div>
 
-    <script>
-      // Simple keyword-based mapper. Extend this object with more patterns and snippets.
-      const SNIPPETS = [
-        {
-          id: 'max-in-list',
-          patterns: ['largest number', 'largest element', 'max', 'maximum', 'find the largest', 'find maximum'],
-          snippets: {
-            python: `# Find maximum in a list\ndef find_max(arr):\n    return max(arr)\n\n# Example\narr = [1,3,2]\nprint(find_max(arr))`,
-            javascript: `// Find maximum in an array\nfunction findMax(arr){\n  return Math.max(...arr);\n}\n// Example\nconsole.log(findMax([1,3,2]));`,
-            cpp: `// Find maximum in vector\n#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  vector<int> arr = {1,3,2};\n  cout << *max_element(arr.begin(), arr.end()) << \"\n\";\n  return 0;\n}`,
-            pseudocode: `Function FIND_MAX(arr):\n  max_val = arr[0]\n  For each x in arr:\n    If x > max_val: max_val = x\n  Return max_val`
-          },
-          explain: `You can use the language's built-in max function (e.g., max() in Python, Math.max in JS) or iterate through the list keeping track of the current maximum.`
-        },
+    <div class="meta">
+      <div>
+        <strong>Quick examples:</strong>
+        <div class="examples" id="examples">
+          <!-- chips populated by JS -->
+        </div>
+      </div>
+      <div style="text-align:right">
+        <small>Demo mode • no API key needed</small>
+      </div>
+    </div>
 
-        {
-          id: 'reverse-string',
-          patterns: ['reverse a string', 'reverse string', 'string reversed', 'reverse the string'],
-          snippets: {
-            python: `# Reverse a string in Python\ns = 'hello'\nprint(s[::-1])`,
-            javascript: `// Reverse a string in JS\nconst s = 'hello';\nconsole.log(s.split('').reverse().join(''));`,
-            cpp: `// Reverse string in C++\n#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  string s = \"hello\";\n  reverse(s.begin(), s.end());\n  cout << s << '\\n';\n}`,
-            pseudocode: `Input: string s\nOutput: reversed string\nUse two-pointer swap or built-in reverse function`        
-          },
-          explain: `Common ways: use slicing in Python, split+reverse+join in JS, or two-pointer swap in C++.`
-        },
+    <div id="status" style="margin-top:10px;color:var(--muted)"></div>
 
-        {
-          id: 'sort-list',
-          patterns: ['sort a list', 'sort array', 'sort a list ascending', 'sort numbers'],
-          snippets: {
-            python: `# Sort a list ascending\narr = [3,1,2]\narr.sort()\nprint(arr)`,
-            javascript: `// Sort array ascending\nconst arr = [3,1,2];\narr.sort((a,b)=>a-b);\nconsole.log(arr);`,
-            cpp: `// Sort vector ascending\n#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  vector<int> a = {3,1,2};\n  sort(a.begin(), a.end());\n  for(int x: a) cout<<x<<" ";\n  return 0;\n}`,
-            pseudocode: `Call the language's sort method or implement quicksort/mergesort for large input.`
-          },
-          explain: `Use built-in sort where available for simplicity and speed.`
-        },
+    <div class="result-title">Result</div>
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <pre id="output" aria-live="polite">Your generated snippet will appear here.</pre>
+      <div style="min-width:90px">
+        <button id="copyBtn" class="copybtn">Copy</button>
+        <div style="height:10px"></div>
+        <button id="downloadBtn" class="ghost">Download .txt</button>
+      </div>
+    </div>
 
-        {
-          id: 'two-sum',
-          patterns: ['two sum', 'pair with sum', 'find two numbers that add up to'],
-          snippets: {
-            python: `# Two-sum (hashmap)\ndef two_sum(nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n        if target - v in seen:\n            return [seen[target - v], i]\n        seen[v] = i\n    return []\n\nprint(two_sum([2,7,11,15], 9))`,
-            javascript: `// Two-sum (hashmap)\nfunction twoSum(nums, target){\n  const seen = new Map();\n  for(let i=0;i<nums.length;i++){\n    const complement = target - nums[i];\n    if(seen.has(complement)) return [seen.get(complement), i];\n    seen.set(nums[i], i);\n  }\n  return [];\n}\nconsole.log(twoSum([2,7,11,15],9));`,
-            cpp: `// Two-sum using unordered_map\n#include <bits/stdc++.h>\nusing namespace std;\nvector<int> twoSum(vector<int>& nums, int target){\n  unordered_map<int,int> m;\n  for(int i=0;i<nums.size();i++){\n    int comp = target - nums[i];\n    if(m.count(comp)) return {m[comp], i};\n    m[nums[i]] = i;\n  }\n  return {};\n}`,
-            pseudocode: `Use a hashmap to store seen values and their indices. For each number check if complement exists.`
-          },
-          explain: `Hashmap gives O(n) solution. Brute force O(n^2) also possible.`
-        }
-      ];
+    <div class="footer">
+      <p><strong>Note:</strong> This demo uses a deterministic local generator (good for interviews / offline demos). A live LLM-powered endpoint can be integrated later without changing the UI.</p>
+    </div>
+  </div>
 
-      const EXAMPLES = [
-        'Find the largest number in a list',
-        'Reverse a string',
-        'Sort an array of integers',
-        'Find two numbers that add up to target (two sum)'
-      ];
+<script>
+// ---------- Local generator database ----------
+const SNIPPETS = [
+  { id:"max-list", patterns:["max","maximum","largest number","largest"], languages:{
+      python: "def find_max(arr):\n    return max(arr)\n\nprint(find_max([1,3,2]))",
+      javascript: "function findMax(arr){ return Math.max(...arr); }\nconsole.log(findMax([1,3,2]));",
+      java: "public static int findMax(int[] a){ int m=a[0]; for(int v:a) if(v>m) m=v; return m; }",
+      cpp: "int findMax(vector<int>& a){ int m=a[0]; for(int v:a) if(v>m) m=v; return m; }"
+  }, explain:"Use built-in max/Math.max or simple loop (O(n))." },
 
-      // Utility: simple normalization and pattern match
-      function normalize(s){
-        return s.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+  { id:"reverse-string", patterns:["reverse string","reverse a string","reverse"], languages:{
+      python: "s='hello'\nprint(s[::-1])",
+      javascript: "const s='hello'; console.log(s.split('').reverse().join(''));",
+      java: "String s = \"hello\"; System.out.println(new StringBuilder(s).reverse().toString());",
+      cpp: "#include <algorithm>\nstring s=\"hello\"; reverse(s.begin(), s.end()); cout<<s;"
+  }, explain:"Reverse by slicing (Python) or split+reverse (JS)." },
+
+  { id:"two-sum", patterns:["two sum","two-sum","pair with sum","find two numbers that add"], languages:{
+      python: "def two_sum(nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n        if target - v in seen:\n            return [seen[target - v], i]\n        seen[v] = i\n    return []",
+      javascript: "function twoSum(nums, target){ const seen = new Map(); for(let i=0;i<nums.length;i++){ const c=target-nums[i]; if(seen.has(c)) return [seen.get(c), i]; seen.set(nums[i], i);} return []; }",
+      java: "// Two-sum uses hashmap; implementation omitted for brevity",
+      cpp: "// Two-sum using unordered_map; implementation omitted for brevity"
+  }, explain:"Hashmap stores previously seen values; O(n) time." },
+
+  { id:"binary-search", patterns:["binary search","binary"], languages:{
+      python: "def binary_search(arr, target):\n    l, r = 0, len(arr)-1\n    while l<=r:\n        mid=(l+r)//2\n        if arr[mid]==target: return mid\n        if arr[mid]<target: l = mid+1\n        else: r = mid-1\n    return -1",
+      javascript: "function binarySearch(arr,target){let l=0,r=arr.length-1;while(l<=r){let m=Math.floor((l+r)/2);if(arr[m]===target) return m; if(arr[m]<target) l=m+1; else r=m-1;} return -1}",
+      java: "// Binary search implementation omitted",
+      cpp: "// Binary search implementation omitted"
+  }, explain:"Search a sorted array in O(log n)." },
+
+  { id:"factorial", patterns:["factorial","n!","factorial of"], languages:{
+      python: "def fact(n):\n    return 1 if n<=1 else n*fact(n-1)\n\nprint(fact(5))",
+      javascript: "function fact(n){ return n<=1?1:n*fact(n-1); } console.log(fact(5));",
+      java: "long fact(int n){ long res=1; for(int i=2;i<=n;i++) res*=i; return res; }",
+      cpp: "long long fact(int n){ long long r=1; for(int i=2;i<=n;i++) r*=i; return r; }"
+  }, explain:"Recursive or iterative factorial (works for small n)." },
+
+  { id:"palindrome", patterns:["palindrome","is palindrome"], languages:{
+      python: "def is_pal(s):\n    s=''.join(ch for ch in s.lower() if ch.isalnum())\n    return s==s[::-1]\nprint(is_pal('A man, a plan, a canal'))",
+      javascript: "function isPal(s){ s=s.toLowerCase().replace(/[^a-z0-9]/g,''); return s===s.split('').reverse().join(''); }",
+      java: "// Palindrome example omitted",
+      cpp: "// Palindrome example omitted"
+  }, explain:"Normalize and compare with reversed string." }
+];
+
+// build examples list
+const EXAMPLES = [
+  "Find maximum in a list",
+  "Reverse a string",
+  "Two-sum problem",
+  "Binary search in sorted array",
+  "Compute factorial of n",
+  "Check if palindrome"
+];
+
+// ---------- Utilities ----------
+function normalize(s){ return (s||"").toLowerCase().replace(/[^a-z0-9\s]/g,' ').trim(); }
+
+function findBestSnippet(input){
+  const t = normalize(input);
+  if(!t) return null;
+  // score each snippet by pattern matches and keyword overlap
+  let best=null, bestScore=0;
+  for(const item of SNIPPETS){
+    let score=0;
+    for(const p of item.patterns){
+      if(t.includes(p)) score += 30;
+    }
+    // partial overlap tokens
+    const toks = new Set(t.split(/\s+/));
+    for(const p of item.patterns){
+      for(const w of p.split(/\s+/)){
+        if(toks.has(w)) score += 3;
       }
+    }
+    if(score>bestScore){ bestScore=score; best=item; }
+  }
+  // threshold
+  if(bestScore < 6) return null;
+  return best;
+}
 
-      function findBestMatch(input){
-        const t = normalize(input);
-        let best = null;
-        let bestScore = 0;
-        for(const item of SNIPPETS){
-          for(const p of item.patterns){
-            const norm = normalize(p);
-            if(t.includes(norm)){
-              // match strength = length of pattern
-              const score = norm.length;
-              if(score > bestScore){ bestScore = score; best = item; }
-            }
-          }
-        }
-        // if none matched, try keyword overlap
-        if(!best){
-          const words = t.split(/\s+/).filter(Boolean);
-          for(const item of SNIPPETS){
-            let overlap=0;
-            for(const p of item.patterns){
-              for(const w of words) if(p.includes(w)) overlap++;
-            }
-            if(overlap>bestScore){ bestScore=overlap; best=item; }
-          }
-        }
-        return best;
-      }
+// ---------- UI wiring ----------
+const input = document.getElementById('input');
+const language = document.getElementById('language');
+const runBtn = document.getElementById('runBtn');
+const output = document.getElementById('output');
+const status = document.getElementById('status');
+const examplesDiv = document.getElementById('examples');
+const copyBtn = document.getElementById('copyBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const liveBtn = document.getElementById('liveBtn');
 
-      // Hook UI
-      const examplesEl = document.getElementById('examples');
-      for(const ex of EXAMPLES){
-        const b = document.createElement('div'); b.className='chip'; b.innerText=ex; b.onclick=()=>{document.getElementById('inputText').value=ex;};
-        examplesEl.appendChild(b);
-      }
+EXAMPLES.forEach(e=>{
+  const chip=document.createElement('button'); chip.className='chip'; chip.textContent=e;
+  chip.onclick=()=>{ input.value=e; runGenerator(); }
+  examplesDiv.appendChild(chip);
+});
 
-      document.getElementById('translateBtn').addEventListener('click', ()=>{
-        const input = document.getElementById('inputText').value.trim();
-        const lang = document.getElementById('langSelect').value;
-        const mode = document.getElementById('modeSelect').value;
-        const out = document.getElementById('outputArea');
-        if(!input){ out.innerText = 'Please enter a problem statement.'; return; }
+copyBtn.onclick = ()=>{
+  navigator.clipboard.writeText(output.textContent).then(()=>{ status.textContent='Copied to clipboard'; setTimeout(()=>status.textContent='',1200); });
+};
+downloadBtn.onclick = ()=>{
+  const blob = new Blob([output.textContent], {type:'text/plain'});
+  const a = document.createElement('a'); a.download = 'snippet.txt'; a.href = URL.createObjectURL(blob); a.click();
+};
 
-        const match = findBestMatch(input);
-        if(!match){ out.innerText = `No confident mapping found. Try rephrasing or try an example.`; return; }
+liveBtn.onclick = ()=>{
+  alert("PRO version (Gemini-backed) is coming soon. For now this demo uses a local generator. When live, the PRO button will call the secure server-side endpoint.");
+};
 
-        let result = '';
-        if(mode==='snippet' || mode==='both'){
-          result += `--- Code Snippet (${lang}) ---\n\n` + (match.snippets[lang] || match.snippets['python']) + '\n\n';
-        }
-        if(mode==='explain' || mode==='both'){
-          result += `--- Explanation / Steps ---\n\n` + match.explain + '\n\n';
-        }
-        // add small confidence note
-        result += `Detected pattern: ${match.id} | Confidence: ${(Math.min(95, Math.max(60, match.id.length*8))).toString()}%`;
-        out.innerText = result;
-      });
+async function runGenerator(){
+  const text = input.value.trim();
+  if(!text){ status.textContent='Please type a request.'; return; }
+  status.textContent='Generating (local engine)…';
+  output.textContent = 'Working…';
 
-      document.getElementById('copyBtn').addEventListener('click', ()=>{
-        const out = document.getElementById('outputArea').innerText;
-        navigator.clipboard.writeText(out).then(()=>{ alert('Copied to clipboard')});
-      });
+  // local pattern matching
+  const best = findBestSnippet(text);
+  const lang = language.value || 'python';
+  if(best){
+    const code = (best.languages[lang] || best.languages['python']) || "// snippet not available in this language";
+    output.textContent = code + "\n\n// Explanation: " + (best.explain || '');
+    status.textContent = 'Result from local generator';
+    return;
+  }
 
-      document.getElementById('clearBtn').addEventListener('click', ()=>{
-        document.getElementById('inputText').value=''; document.getElementById('outputArea').innerText='Your translated code will appear here...';
-      });
+  // fallback simple heuristics: common tasks via quick templates
+  const t = normalize(text);
+  if(t.includes('sort') && t.includes('array')){
+    if(lang==='python') output.textContent = "arr = [3,1,2]\narr.sort()\nprint(arr)";
+    else if(lang==='javascript') output.textContent = "const arr=[3,1,2]; arr.sort((a,b)=>a-b); console.log(arr);";
+    else output.textContent = "// Sort example omitted for this language";
+    status.textContent='Result from simple template';
+    return;
+  }
 
-      document.getElementById('downloadBtn').addEventListener('click', ()=>{
-        const text = document.getElementById('outputArea').innerText;
-        const blob = new Blob([text], {type: 'text/plain'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'snippet.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      });
-    </script>
-  </body>
+  // generic fallback
+  output.textContent = "# Sorry — no direct local match.\n# Try: 'Find maximum in a list' or choose one of the examples above.";
+  status.textContent = 'No local match — refine your request';
+}
+
+// handle button
+runBtn.onclick = runGenerator;
+
+// prettify initial placeholder
+output.textContent = "Try an example above (click one) or type: 'Find maximum in a list'";
+
+// allow ctrl+enter to run
+input.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key==='Enter') runGenerator(); });
+
+</script>
+</body>
 </html>
